@@ -2,64 +2,134 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+    <title>Pairwise Ranking</title>
 
-    <!-- update the version number as needed -->
     <script defer src="/__/firebase/7.0.0/firebase-app.js"></script>
-    <!-- include only the Firebase features as you need -->
     <script defer src="/__/firebase/7.0.0/firebase-auth.js"></script>
-    <script defer src="/__/firebase/7.0.0/firebase-database.js"></script>
-    <script defer src="/__/firebase/7.0.0/firebase-messaging.js"></script>
-    <script defer src="/__/firebase/7.0.0/firebase-storage.js"></script>
-    <!-- initialize the SDK after all desired features are loaded -->
+    <script defer src="/__/firebase/7.0.0/firebase-firestore.js"></script>
     <script defer src="/__/firebase/init.js"></script>
-
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
-    </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
-
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+    document.addEventListener('DOMContentLoaded', () => {
+      location.hash = "signing_in";
+      const app = firebase.app();
+      app.auth().signInAnonymously().catch(function(error) {
+        console.error(`failed to sign in: ${error.code} --- ${error.message}`);
+        alert(`failed to sign in: ${error.code} --- ${error.message}`);
+      });
 
-        try {
-          let app = firebase.app();
-          let features = ['auth', 'database', 'messaging', 'storage'].filter(feature => typeof app[feature] === 'function');
-          document.getElementById('load').innerHTML = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          document.getElementById('load').innerHTML = 'Error loading the Firebase SDK, check the console.';
+      const LISTS = "lists";
+      const ITEMS = "items";
+      const INSTANCES = "instances";
+
+      const db = app.firestore();
+      function listRef(listId) {
+        return db.collection(LISTS);
+      }
+      function instanceRef(listId, userId) {
+        return db.collection(LISTS);
+      }
+      
+      app.auth().onAuthStateChanged(function(user) {
+        location.hash = user ? "lists" : "signing_in";
+      });
+
+      function mkNewListButton() {
+      }
+
+      function clearElement(e) {
+        while (e.lastChild) {
+          e.removeChild(e.lastChild);
+        }
+      }
+      function viewSignedOut() {
+        document.body.textContent = "signing in anonymously...";
+      }
+      function viewLists() {
+        const holder = document.createElement("div");
+        document.body.appendChild(holder);
+
+        const persisted = document.createElement("div");
+        holder.appendChild(persisted);
+
+        const lists = db.collection(LISTS);
+
+        const button = document.createElement("button");
+        button.textContent = "New List";
+        button.addEventListener("click", () => {
+          const doc = lists.doc();
+          doc.set({ owner: app.auth().currentUser.uid });
+          window.localStorage.setItem('current_list', doc.id);
+          location.hash = "edit_list";
+        });
+        holder.appendChild(button);
+
+        lists.onSnapshot(snap => {
+          clearElement(persisted);
+          snap.docs.forEach(doc => {
+            const item = document.createElement("p");
+            item.textContent = doc.id;
+            persisted.appendChild(item);
+          });
+        });
+      }
+      function viewListEditor() {
+        const holder = document.createElement("div");
+        document.body.appendChild(holder);
+
+        const list_id = window.localStorage.getItem("current_list");
+        if (!list_id) {
+          console.error("could not find a list id");
+          location.hash = "lists";
+          return;
+        }
+
+        const list_title = document.createElement("p");
+        list_title.textContent = list_id;
+        list_title.style = "font-weight: bold";
+        holder.appendChild(list_title);
+
+        const persisted = document.createElement("div");
+        holder.appendChild(persisted);
+
+        const editor = document.createElement("textarea");
+        holder.appendChild(editor);
+
+
+        const items = db.collection(LISTS).doc(list_id).collection(ITEMS);
+        items.orderBy("rank").onSnapshot(snap => {
+          clearElement(persisted);
+          snap.docs.forEach(doc => {
+            const item = document.createElement("p");
+            item.textContent = doc.data().text;
+            persisted.appendChild(item);
+          });
+        });
+        editor.addEventListener("keypress", evt => {
+          if (evt.keyCode === 13) {
+            evt.preventDefault();
+            items.add({ text: editor.value, rank: Date.now() });
+            editor.value = "";
+          }
+        });
+      }
+
+      window.addEventListener("hashchange", () => {
+        clearElement(document.body);
+        switch (location.hash) {
+        case "#lists":
+          return viewLists();
+
+        case "#edit_list":
+          return viewListEditor();
+
+        case "#signing_in":
+          return viewSignedOut();
         }
       });
+    });
     </script>
+  </head>
+
+  <body>
   </body>
 </html>
