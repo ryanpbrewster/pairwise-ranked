@@ -3,6 +3,15 @@
   <head>
     <meta charset="utf-8">
     <title>Pairwise Ranking</title>
+    <style>
+    div {
+      display: grid;
+    }
+    button {
+      font-size: 14pt;
+      margin: 10px;
+    }
+    </style>
 
     <script defer src="/__/firebase/7.0.0/firebase-app.js"></script>
     <script defer src="/__/firebase/7.0.0/firebase-auth.js"></script>
@@ -66,8 +75,12 @@
         lists.onSnapshot(snap => {
           clearElement(persisted);
           snap.docs.forEach(doc => {
-            const item = document.createElement("p");
+            const item = document.createElement("button");
             item.textContent = doc.id;
+            item.addEventListener("click", () => {
+              window.localStorage.setItem('current_list', doc.id);
+              location.hash = "edit_list";
+            });
             persisted.appendChild(item);
           });
         });
