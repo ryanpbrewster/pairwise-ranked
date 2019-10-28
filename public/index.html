@@ -17,128 +17,138 @@
     <script defer src="/__/firebase/7.0.0/firebase-auth.js"></script>
     <script defer src="/__/firebase/7.0.0/firebase-firestore.js"></script>
     <script defer src="/__/firebase/init.js"></script>
+    <script defer src="./index.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-      location.hash = "signing_in";
-      const app = firebase.app();
-      app.auth().signInAnonymously().catch(function(error) {
-        console.error(`failed to sign in: ${error.code} --- ${error.message}`);
-        alert(`failed to sign in: ${error.code} --- ${error.message}`);
-      });
-
-      const LISTS = "lists";
-      const ITEMS = "items";
-      const INSTANCES = "instances";
-
-      const db = app.firestore();
-      function listRef(listId) {
-        return db.collection(LISTS);
-      }
-      function instanceRef(listId, userId) {
-        return db.collection(LISTS);
-      }
-      
-      app.auth().onAuthStateChanged(function(user) {
-        location.hash = user ? "lists" : "signing_in";
-      });
-
-      function mkNewListButton() {
-      }
-
-      function clearElement(e) {
-        while (e.lastChild) {
-          e.removeChild(e.lastChild);
-        }
-      }
-      function viewSignedOut() {
-        document.body.textContent = "signing in anonymously...";
-      }
-      function viewLists() {
-        const holder = document.createElement("div");
-        document.body.appendChild(holder);
-
-        const persisted = document.createElement("div");
-        holder.appendChild(persisted);
-
-        const lists = db.collection(LISTS);
-
-        const button = document.createElement("button");
-        button.textContent = "New List";
-        button.addEventListener("click", () => {
-          const doc = lists.doc();
-          doc.set({ owner: app.auth().currentUser.uid });
-          window.localStorage.setItem('current_list', doc.id);
-          location.hash = "edit_list";
-        });
-        holder.appendChild(button);
-
-        lists.onSnapshot(snap => {
-          clearElement(persisted);
-          snap.docs.forEach(doc => {
-            const item = document.createElement("button");
-            item.textContent = doc.id;
-            item.addEventListener("click", () => {
-              window.localStorage.setItem('current_list', doc.id);
-              location.hash = "edit_list";
-            });
-            persisted.appendChild(item);
-          });
-        });
-      }
-      function viewListEditor() {
-        const holder = document.createElement("div");
-        document.body.appendChild(holder);
-
-        const list_id = window.localStorage.getItem("current_list");
-        if (!list_id) {
-          console.error("could not find a list id");
-          location.hash = "lists";
-          return;
-        }
-
-        const list_title = document.createElement("p");
-        list_title.textContent = list_id;
-        list_title.style = "font-weight: bold";
-        holder.appendChild(list_title);
-
-        const persisted = document.createElement("div");
-        holder.appendChild(persisted);
-
-        const editor = document.createElement("textarea");
-        holder.appendChild(editor);
-
-
-        const items = db.collection(LISTS).doc(list_id).collection(ITEMS);
-        items.orderBy("rank").onSnapshot(snap => {
-          clearElement(persisted);
-          snap.docs.forEach(doc => {
-            const item = document.createElement("p");
-            item.textContent = doc.data().text;
-            persisted.appendChild(item);
-          });
-        });
-        editor.addEventListener("keypress", evt => {
-          if (evt.keyCode === 13) {
-            evt.preventDefault();
-            items.add({ text: editor.value, rank: Date.now() });
-            editor.value = "";
-          }
-        });
-      }
-
-      window.addEventListener("hashchange", () => {
-        clearElement(document.body);
-        switch (location.hash) {
-        case "#lists":
-          return viewLists();
-
-        case "#edit_list":
-          return viewListEditor();
-
-        case "#signing_in":
-          return viewSignedOut();
-        }
-      });
+      const ALL_SONGS = [
+        `All Too Well`,
+        `Cruel Summer`,
+        `Holy Ground`,
+        `Style`,
+        `Blank Space`,
+        `You Belong With Me`,
+        `I Think He Knows`,
+        `Paper Rings`,
+        `Getaway Car`,
+        `Dress`,
+        `...Ready for it?`,
+        `Mine`,
+        `New Romantics`,
+        `End Game`,
+        `London Boy`,
+        `Delicate`,
+        `22`,
+        `How You Get The Girl`,
+        `The Archer`,
+        `I Wish You Would`,
+        `Cornelia Street`,
+        `We Are Never Ever Getting Back Together`,
+        `The Man`,
+        `Welcome to New York`,
+        `Sparks Fly`,
+        `The Story of Us`,
+        `Daylight`,
+        `Death By a Thousand Cuts`,
+        `Shake it Off`,
+        `Speak Now`,
+        `State of Grace`,
+        `Fearless`,
+        `Red`,
+        `Our Song`,
+        `Miss Americana & the Heartbreak Prince`,
+        `King Of My Heart`,
+        `Call It What You Want`,
+        `Dancing With Our Hands Tied`,
+        `Ours`,
+        `Don't Blame Me`,
+        `Dear John`,
+        `All You Had To Do Was Stay`,
+        `Back To December`,
+        `Begin Again`,
+        `Starlight`,
+        `Picture To Burn`,
+        `If This Was A Movie`,
+        `Lover`,
+        `Love Story`,
+        `Long Live`,
+        `You Need To Calm Down`,
+        `Stay Stay Stay`,
+        `Sweeter than Fiction`,
+        `Gorgeous`,
+        `Last Kiss`,
+        `Afterglow`,
+        `So It Goes..`,
+        `Change`,
+        `Clean`,
+        `Jump Then Fall`,
+        `You Are in Love`,
+        `Come Back...Be Here`,
+        `Tim McGraw`,
+        `Wildest Dreams`,
+        `I Forgot That You Existed`,
+        `The Best Day`,
+        `White Horse`,
+        `LWYMMD`,
+        `Better Than Revenge`,
+        `Enchanted`,
+        `ME!`,
+        `Should've Said No`,
+        `Hey Stephen`,
+        `Forever and Always`,
+        `Forever and Always (Piano Version)`,
+        `Mary's Song (Oh My My My)`,
+        `The Lucky One`,
+        `Out of the Woods`,
+        `I Did Something Bad`,
+        `It's Nice to Have a Friend`,
+        `New Years Day`,
+        `Teardrops on My Guitar`,
+        `The Moment I Knew`,
+        `Mean`,
+        `I'm Only Me When I'm With You`,
+        `I Almost Do`,
+        `I Knew You Were Trouble`,
+        `Tell Me Why`,
+        `Superstar`,
+        `The Other Side of the Door`,
+        `I Know Places`,
+        `The Last Time`,
+        `Treacherous`,
+        `This Love`,
+        `Safe & Sound`,
+        `Sad Beautiful Tragic`,
+        `Today Was a Fairytale`,
+        `Breathe`,
+        `Come In With The Rain`,
+        `Fifteen`,
+        `Eyes Open`,
+        `Everything Has Changed`,
+        `Tied Together with a Smile`,
+        `Untouchable`,
+        `The Way I Loved You`,
+        `Stay Beautiful`,
+        `Superman`,
+        `Cold As You`,
+        `This Is Why We Can't Have Nice Things`,
+        `False God`,
+        `Soon You'll Get Better (feat. Dixie Chicks)`,
+        `A Place in This World`,
+        `The Outside`,
+        `A Perfectly Good Heart`,
+        `Girl at Home`,
+        `Haunted`,
+        `Never Grow Up`,
+        `Wonderland`,
+        `You're Not Sorry`,
+        `Innocent`,
+        `Invisible`,
+        `Ronan`,
+        `Beautiful Eyes`,
+        `Crazier`,
+        `I Heart ?`,
+        `Bad Blood`,
+      ];
+      console.log(ALL_SONGS);
     });
     </script>
   </head>
