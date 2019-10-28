@@ -1,7 +1,8 @@
-// attempt to sort `xs` using comparison function `cmp`.
-// If `cmp` is undefined for any inputs, exit immediately by returning those inputs.
-// If `cmp` is defined for all inputs, finish sorting the array and return nothing.
-function try_sort(xs, lt) {
+// attempt to sort `input` using comparison function `lt`.
+// If `lt` is undefined for any inputs, exit immediately by returning those inputs.
+// If `lt` is defined for all inputs, finish sorting the array and return nothing.
+function try_sort(input, lt) {
+  const xs = [...input];
   let v = undefined;
   if (v = try_heapify(xs, lt)) {
     return v;
@@ -9,7 +10,6 @@ function try_sort(xs, lt) {
   for (let i = 0; i < xs.length; i++) {
     const end = xs.length - i - 1;
     swap(xs, 0, end); // move the max value to the correct spot
-    console.log(`the ${i}-th value is ${xs[end]}`);
     if (v = try_sift_down(xs, 0, end, lt)) {
       return v;
     }
@@ -60,35 +60,3 @@ function try_heapify(xs, lt) {
     }
   }
 }
-
-const FOO = [3, 1, 4, 5, 9, 2, 6];
-const KNOWN_COMPARISONS = [
-  [4, ">", 2],
-  [4, "<", 6],
-  [1, "<", 5],
-  [5, "<", 9],
-  [3, "<", 9],
-  [9, ">", 6],
-  [3, "<", 5],
-  [4, "<", 5],
-  [5, "<", 6],
-  [2, "<", 3],
-  [2, "<", 5],
-  [3, ">", 1],
-  [3, ">", 4],
-  [1, "<", 2],
-];
-function BAR(a, b) {
-  console.log(`comparing ${a} vs ${b}`);
-  for (const elem of KNOWN_COMPARISONS) {
-    if (elem[0] === a && elem[2] === b) {
-      return elem[1] === "<";
-    }
-    if (elem[0] === b && elem[2] === a) {
-      return elem[1] === ">";
-    }
-  }
-  console.log("no known comparison...");
-}
-
-console.log(try_sort(FOO, BAR))

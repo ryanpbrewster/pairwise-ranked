@@ -13,146 +13,191 @@
     }
     </style>
 
-    <script defer src="/__/firebase/7.0.0/firebase-app.js"></script>
-    <script defer src="/__/firebase/7.0.0/firebase-auth.js"></script>
-    <script defer src="/__/firebase/7.0.0/firebase-firestore.js"></script>
-    <script defer src="/__/firebase/init.js"></script>
+    <script>
+    const ALL_SONGS = [
+      `All Too Well`,
+      `Cruel Summer`,
+      `Holy Ground`,
+      `Style`,
+      `Blank Space`,
+      `You Belong With Me`,
+      `I Think He Knows`,
+      `Paper Rings`,
+      `Getaway Car`,
+      `Dress`,
+      `...Ready for it?`,
+      `Mine`,
+      `New Romantics`,
+      `End Game`,
+      `London Boy`,
+      `Delicate`,
+      `22`,
+      `How You Get The Girl`,
+      `The Archer`,
+      `I Wish You Would`,
+      `Cornelia Street`,
+      `We Are Never Ever Getting Back Together`,
+      `The Man`,
+      `Welcome to New York`,
+      `Sparks Fly`,
+      `The Story of Us`,
+      `Daylight`,
+      `Death By a Thousand Cuts`,
+      `Shake it Off`,
+      `Speak Now`,
+      `State of Grace`,
+      `Fearless`,
+      `Red`,
+      `Our Song`,
+      `Miss Americana & the Heartbreak Prince`,
+      `King Of My Heart`,
+      `Call It What You Want`,
+      `Dancing With Our Hands Tied`,
+      `Ours`,
+      `Don't Blame Me`,
+      `Dear John`,
+      `All You Had To Do Was Stay`,
+      `Back To December`,
+      `Begin Again`,
+      `Starlight`,
+      `Picture To Burn`,
+      `If This Was A Movie`,
+      `Lover`,
+      `Love Story`,
+      `Long Live`,
+      `You Need To Calm Down`,
+      `Stay Stay Stay`,
+      `Sweeter than Fiction`,
+      `Gorgeous`,
+      `Last Kiss`,
+      `Afterglow`,
+      `So It Goes..`,
+      `Change`,
+      `Clean`,
+      `Jump Then Fall`,
+      `You Are in Love`,
+      `Come Back...Be Here`,
+      `Tim McGraw`,
+      `Wildest Dreams`,
+      `I Forgot That You Existed`,
+      `The Best Day`,
+      `White Horse`,
+      `LWYMMD`,
+      `Better Than Revenge`,
+      `Enchanted`,
+      `ME!`,
+      `Should've Said No`,
+      `Hey Stephen`,
+      `Forever and Always`,
+      `Forever and Always (Piano Version)`,
+      `Mary's Song (Oh My My My)`,
+      `The Lucky One`,
+      `Out of the Woods`,
+      `I Did Something Bad`,
+      `It's Nice to Have a Friend`,
+      `New Years Day`,
+      `Teardrops on My Guitar`,
+      `The Moment I Knew`,
+      `Mean`,
+      `I'm Only Me When I'm With You`,
+      `I Almost Do`,
+      `I Knew You Were Trouble`,
+      `Tell Me Why`,
+      `Superstar`,
+      `The Other Side of the Door`,
+      `I Know Places`,
+      `The Last Time`,
+      `Treacherous`,
+      `This Love`,
+      `Safe & Sound`,
+      `Sad Beautiful Tragic`,
+      `Today Was a Fairytale`,
+      `Breathe`,
+      `Come In With The Rain`,
+      `Fifteen`,
+      `Eyes Open`,
+      `Everything Has Changed`,
+      `Tied Together with a Smile`,
+      `Untouchable`,
+      `The Way I Loved You`,
+      `Stay Beautiful`,
+      `Superman`,
+      `Cold As You`,
+      `This Is Why We Can't Have Nice Things`,
+      `False God`,
+      `Soon You'll Get Better (feat. Dixie Chicks)`,
+      `A Place in This World`,
+      `The Outside`,
+      `A Perfectly Good Heart`,
+      `Girl at Home`,
+      `Haunted`,
+      `Never Grow Up`,
+      `Wonderland`,
+      `You're Not Sorry`,
+      `Innocent`,
+      `Invisible`,
+      `Ronan`,
+      `Beautiful Eyes`,
+      `Crazier`,
+      `I Heart ?`,
+      `Bad Blood`,
+    ];
+    </script>
     <script defer src="./index.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const ALL_SONGS = [
-        `All Too Well`,
-        `Cruel Summer`,
-        `Holy Ground`,
-        `Style`,
-        `Blank Space`,
-        `You Belong With Me`,
-        `I Think He Knows`,
-        `Paper Rings`,
-        `Getaway Car`,
-        `Dress`,
-        `...Ready for it?`,
-        `Mine`,
-        `New Romantics`,
-        `End Game`,
-        `London Boy`,
-        `Delicate`,
-        `22`,
-        `How You Get The Girl`,
-        `The Archer`,
-        `I Wish You Would`,
-        `Cornelia Street`,
-        `We Are Never Ever Getting Back Together`,
-        `The Man`,
-        `Welcome to New York`,
-        `Sparks Fly`,
-        `The Story of Us`,
-        `Daylight`,
-        `Death By a Thousand Cuts`,
-        `Shake it Off`,
-        `Speak Now`,
-        `State of Grace`,
-        `Fearless`,
-        `Red`,
-        `Our Song`,
-        `Miss Americana & the Heartbreak Prince`,
-        `King Of My Heart`,
-        `Call It What You Want`,
-        `Dancing With Our Hands Tied`,
-        `Ours`,
-        `Don't Blame Me`,
-        `Dear John`,
-        `All You Had To Do Was Stay`,
-        `Back To December`,
-        `Begin Again`,
-        `Starlight`,
-        `Picture To Burn`,
-        `If This Was A Movie`,
-        `Lover`,
-        `Love Story`,
-        `Long Live`,
-        `You Need To Calm Down`,
-        `Stay Stay Stay`,
-        `Sweeter than Fiction`,
-        `Gorgeous`,
-        `Last Kiss`,
-        `Afterglow`,
-        `So It Goes..`,
-        `Change`,
-        `Clean`,
-        `Jump Then Fall`,
-        `You Are in Love`,
-        `Come Back...Be Here`,
-        `Tim McGraw`,
-        `Wildest Dreams`,
-        `I Forgot That You Existed`,
-        `The Best Day`,
-        `White Horse`,
-        `LWYMMD`,
-        `Better Than Revenge`,
-        `Enchanted`,
-        `ME!`,
-        `Should've Said No`,
-        `Hey Stephen`,
-        `Forever and Always`,
-        `Forever and Always (Piano Version)`,
-        `Mary's Song (Oh My My My)`,
-        `The Lucky One`,
-        `Out of the Woods`,
-        `I Did Something Bad`,
-        `It's Nice to Have a Friend`,
-        `New Years Day`,
-        `Teardrops on My Guitar`,
-        `The Moment I Knew`,
-        `Mean`,
-        `I'm Only Me When I'm With You`,
-        `I Almost Do`,
-        `I Knew You Were Trouble`,
-        `Tell Me Why`,
-        `Superstar`,
-        `The Other Side of the Door`,
-        `I Know Places`,
-        `The Last Time`,
-        `Treacherous`,
-        `This Love`,
-        `Safe & Sound`,
-        `Sad Beautiful Tragic`,
-        `Today Was a Fairytale`,
-        `Breathe`,
-        `Come In With The Rain`,
-        `Fifteen`,
-        `Eyes Open`,
-        `Everything Has Changed`,
-        `Tied Together with a Smile`,
-        `Untouchable`,
-        `The Way I Loved You`,
-        `Stay Beautiful`,
-        `Superman`,
-        `Cold As You`,
-        `This Is Why We Can't Have Nice Things`,
-        `False God`,
-        `Soon You'll Get Better (feat. Dixie Chicks)`,
-        `A Place in This World`,
-        `The Outside`,
-        `A Perfectly Good Heart`,
-        `Girl at Home`,
-        `Haunted`,
-        `Never Grow Up`,
-        `Wonderland`,
-        `You're Not Sorry`,
-        `Innocent`,
-        `Invisible`,
-        `Ronan`,
-        `Beautiful Eyes`,
-        `Crazier`,
-        `I Heart ?`,
-        `Bad Blood`,
-      ];
-      console.log(ALL_SONGS);
+    document.addEventListener("DOMContentLoaded", () => {
+    const DOM = {
+      left: document.getElementById("left"),
+      right: document.getElementById("right"),
+    };
+    let on_left_click = null;
+    let on_right_click = null;
+    DOM.left.addEventListener("click", evt => {
+      on_left_click();
+    });
+    DOM.right.addEventListener("click", evt => {
+      on_right_click();
+    });
+    const ORDERINGS = [];
+    function lt(a, b) {
+      for (const item of ORDERINGS) {
+        if (item[0] === a && item[2] === b) {
+          return item[1] === '<';
+        }
+        if (item[0] === b && item[2] === a) {
+          return item[1] === '>';
+        }
+      }
+    }
+    async function determine_ordering(a, b) {
+      DOM.left.textContent = a;
+      DOM.right.textContent = b;
+      return new Promise(r => {
+        on_left_click = () => {
+          ORDERINGS.push([a, ">", b]);
+          r();
+        };
+        on_right_click = () => {
+          ORDERINGS.push([b, ">", a]);
+          r();
+        };
+      });
+    }
+
+    async function loop() {
+      let v = undefined;
+      while (v = try_sort(ALL_SONGS, lt)) {
+        await determine_ordering(v[0], v[1]);
+      }
+    }
+    loop();
     });
     </script>
   </head>
 
   <body>
+  <p>Which song is better?</p>
+  <button id="left">Left</button>
+  <button id="right">Left</button>
   </body>
 </html>
