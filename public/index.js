@@ -1,8 +1,7 @@
-// attempt to sort `input` using comparison function `lt`.
+// attempt to sort `xs` using comparison function `lt`.
 // If `lt` is undefined for any inputs, exit immediately by returning those inputs.
 // If `lt` is defined for all inputs, finish sorting the array and return nothing.
-function try_sort(input, lt) {
-  const xs = [...input];
+function try_sort(xs, lt) {
   let v = undefined;
   if (v = try_heapify(xs, lt)) {
     return v;

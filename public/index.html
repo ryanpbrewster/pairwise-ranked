@@ -158,39 +158,54 @@
     DOM.right.addEventListener("click", evt => {
       on_right_click();
     });
-    const ORDERINGS = [];
+    const ORDERINGS = {};
+    function mkkey(a, b) {
+      return a < b ? `${a}###${b}` : mkkey(b, a);
+    }
     function lt(a, b) {
-      for (const item of ORDERINGS) {
-        if (item[0] === a && item[2] === b) {
-          return item[1] === '<';
-        }
-        if (item[0] === b && item[2] === a) {
-          return item[1] === '>';
-        }
-      }
+      const max = ORDERINGS[mkkey(a, b)];
+      if (max === undefined) return undefined;
+      return max === b;
     }
     async function determine_ordering(a, b) {
+      console.log(`which is bigger, ${a} or ${b}?`);
       DOM.left.textContent = a;
       DOM.right.textContent = b;
       return new Promise(r => {
         on_left_click = () => {
-          ORDERINGS.push([a, ">", b]);
+          ORDERINGS[mkkey(a, b)] = a;
           r();
         };
         on_right_click = () => {
-          ORDERINGS.push([b, ">", a]);
+          ORDERINGS[mkkey(a, b)] = b;
           r();
         };
       });
     }
 
     async function loop() {
-      let v = undefined;
-      while (v = try_sort(ALL_SONGS, lt)) {
+      while (true) {
+        const clone = [...ALL_SONGS];
+        const v = try_sort(clone, lt);
+        if (!v) {
+          break;
+        }
         await determine_ordering(v[0], v[1]);
       }
     }
-    loop();
+    loop().then(() => {
+      try_sort(ALL_SONGS, lt);
+      const ranked = document.createElement("ol");
+      for (const song of ALL_SONGS) {
+        const item = document.createElement("li");
+        item.textContent = song;
+        ranked.appendChild(item);
+      }
+      while (document.body.lastChild) {
+        document.body.removeChild(document.body.lastChild);
+      }
+      document.body.appendChild(ranked);
+    });
     });
     </script>
   </head>
@@ -198,6 +213,6 @@
   <body>
   <p>Which song is better?</p>
   <button id="left">Left</button>
-  <button id="right">Left</button>
+  <button id="right">Right</button>
   </body>
 </html>
