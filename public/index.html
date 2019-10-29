@@ -4,12 +4,44 @@
     <meta charset="utf-8">
     <title>Pairwise Ranking</title>
     <style>
-    div {
+    body {
       display: grid;
+      width: 500px;
+      height: 300px;
+    }
+    #left {
+      grid-row: 1;
+      grid-column: 1;
+    }
+    #right {
+      grid-row: 1;
+      grid-column: 2;
     }
     button {
-      font-size: 14pt;
-      margin: 10px;
+      background: #ffffff;
+      border-radius: 15px;
+      border: 4px solid #484848;
+      color: #484848;
+      min-height: 200px;
+      width: 200px;
+      padding: 20px;
+      text-transform: uppercase;
+    }
+    button:active, button:focus {
+      outline: none;
+    }
+    button:hover {
+      color: #ffffff !important;
+      background: #f6b93b;
+      border-color: #f6b93b !important;
+      transition: all 0.2s ease 0s;
+      cursor: pointer;
+    }
+    button.pressed {
+      color: #ffffff !important;
+      background: #f6b93b;
+      border-color: #f6b93b !important;
+      transition: all 0.2s ease 0s;
     }
     </style>
 
@@ -30,6 +62,30 @@
     DOM.right.addEventListener("click", evt => {
       on_right_click();
     });
+    document.body.addEventListener("keydown", evt => {
+      switch (evt.keyCode) {
+      case 37: // left
+        DOM.left.classList.add("pressed");
+        break;
+      case 39: // right
+        DOM.right.classList.add("pressed");
+        break;
+      default:
+      }
+    });
+    document.body.addEventListener("keyup", evt => {
+      switch (evt.keyCode) {
+      case 37: // left
+        DOM.left.classList.remove("pressed");
+        DOM.left.click();
+        break;
+      case 39: // right
+        DOM.right.classList.remove("pressed");
+        DOM.right.click();
+        break;
+      default:
+      }
+    });
     const ORDERINGS = {};
     function mkkey(a, b) {
       return a < b ? `${a}###${b}` : mkkey(b, a);
@@ -40,7 +96,6 @@
       return max === b;
     }
     async function determine_ordering(a, b) {
-      console.log(`which is bigger, ${a} or ${b}?`);
       DOM.left.textContent = a;
       DOM.right.textContent = b;
       return new Promise(r => {
@@ -93,7 +148,7 @@
         ranked.appendChild(item);
       }
       document.body.appendChild(ranked);
-    });
+    }).catch(err => alert(`bad list id: ${listId}`));
     });
     </script>
   </head>
@@ -102,5 +157,11 @@
   <p>Which is better?</p>
   <button id="left">Left</button>
   <button id="right">Right</button>
+  <!--
+  <button id="hack">!!!</button>
+  <script>
+  document.getElementById("hack").addEventListener("click", () => setInterval(() => document.getElementById("left").click(), 10));
+  </script>
+  -->
   </body>
 </html>
