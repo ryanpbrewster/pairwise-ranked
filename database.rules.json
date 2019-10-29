@@ -1,0 +1,10 @@
+{
+  "rules": {
+    "lists": {
+      "$listId": {
+        ".read": true,
+        ".write": "!data.exists()"
+      }
+    }
+  }
+}

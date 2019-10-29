@@ -67,9 +67,10 @@
     }
 
     const app = firebase.initializeApp({ databaseURL: "https://pairwise-ranked.firebaseio.com" });
-    app.database().ref().child("lists").child(window.location.pathname).once("value").then(async (snap) => {
+    const listId = window.location.pathname === "/" ? "taylorswift" : window.location.pathname.slice(1);
+    app.database().ref().child("lists").child(listId).once("value").then(async (snap) => {
       if (!snap.val()) {
-        alert(`no such list: "${window.location.pathname.slice(1)}"`);
+        alert(`no such list: "${listId}"`);
         return;
       }
 
