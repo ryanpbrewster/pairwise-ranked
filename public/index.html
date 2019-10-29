@@ -53,6 +53,7 @@
     };
     let on_left_click = null;
     let on_right_click = null;
+    let on_undo = null;
     DOM.left.addEventListener("click", evt => {
       on_left_click();
     });
@@ -66,6 +67,9 @@
         break;
       case 39: // right
         DOM.right.classList.add("pressed");
+        break;
+      case 90: // right
+        on_undo();
         break;
       default:
       }
@@ -83,25 +87,35 @@
       default:
       }
     });
-    const ORDERINGS = {};
+
+    const LT_MAP = {};
+    const ORD_HIST = [];
     function mkkey(a, b) {
-      return a < b ? `${a}###${b}` : mkkey(b, a);
+      return `${a}###${b}`;
     }
     function lt(a, b) {
-      const max = ORDERINGS[mkkey(a, b)];
-      if (max === undefined) return undefined;
-      return max === b;
+      return LT_MAP[mkkey(a, b)];
     }
     async function determine_ordering(a, b) {
       DOM.left.textContent = a;
       DOM.right.textContent = b;
       return new Promise(r => {
         on_left_click = () => {
-          ORDERINGS[mkkey(a, b)] = a;
+          LT_MAP[mkkey(a, b)] = true;
+          LT_MAP[mkkey(b, a)] = false;
+          ORD_HIST.push([a, b]);
           r();
         };
         on_right_click = () => {
-          ORDERINGS[mkkey(a, b)] = b;
+          LT_MAP[mkkey(a, b)] = false;
+          LT_MAP[mkkey(b, a)] = true;
+          ORD_HIST.push([a, b]);
+          r();
+        };
+        on_undo = () => {
+          const [a0, b0] = ORD_HIST.pop();
+          delete LT_MAP[mkkey(a0, b0)];
+          delete LT_MAP[mkkey(b0, a0)];
           r();
         };
       });
@@ -135,7 +149,7 @@
         document.body.removeChild(document.body.lastChild);
       }
       const meta = document.createElement("p");
-      meta.textContent = `${Object.keys(ORDERINGS).length} comparisons`;
+      meta.textContent = `${Object.keys(ORD_HIST).length} comparisons`;
       document.body.appendChild(meta);
 
       const ranked = document.createElement("ol");
@@ -145,7 +159,9 @@
         ranked.appendChild(item);
       }
       document.body.appendChild(ranked);
-    }).catch(err => alert(`bad list id: ${listId}`));
+    }).catch(err => {
+      alert(`error w/ ${listId}: ${err}`)
+    });
     });
     </script>
   </head>
