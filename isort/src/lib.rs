@@ -31,21 +31,30 @@ where
         if cmp(xs[i], xs[i + half]) == Ordering::Less {
             xs.swap(i, i + half);
         }
-        partner.insert(xs[i], i + half);
+        partner.insert(xs[i], xs[i + half]);
     }
 
     // Now recursively sort those larger elements.
     merge_insertion_sort(&mut xs[..half], cmp);
 
-    // The smallest element has a partner that we already know about, move that into place.
-    xs.swap(half, partner[&xs[0]]);
-    xs[..=half].rotate_right(1);
-
     // Now do an insertion-sort to get the latter half of the array into order.
-    for i in half + 1..xs.len() {
+    for i in 0..half {
+        // Every step of the way we'll be inserting an extra element,
+        // so `x[i]` will be located at `xs[2*i]`.
+        let x = xs[2 * i];
+        let y = partner[&x];
+        // We known that y[i] < x[i], so we need to insert it to the left of x[i].
+        let idx = find_insert_point(y, &xs[..2 * i], cmp);
+        // Make room.
+        xs[idx..=half + i].rotate_right(1);
+        // Insert it.
+        xs[idx] = y;
+    }
+    if xs.len() % 2 > 0 {
+        let i = xs.len() - 1;
         let x = xs[i];
         let idx = find_insert_point(x, &xs[..i], cmp);
-        xs[idx..=i].rotate_right(1);
+        xs[idx..].rotate_right(1);
     }
 }
 
@@ -93,7 +102,7 @@ mod test {
 
     #[test]
     fn manual() {
-        let mut xs: Vec<i32> = vec![2, 1, 0];
+        let mut xs: Vec<i32> = (0..8).collect();
         merge_insertion_sort(&mut xs, &mut |a: i32, b: i32| {
             println!("cmp {} vs {}", a, b);
             a.cmp(&b)
@@ -115,8 +124,13 @@ mod test {
     }
 
     #[test]
-    fn right_number_of_comparisons_small() {
-        let expected = vec![0, 1, 3, 5, 7, 10, 13, 16, 19, 22, 26, 30, 34];
+    fn right_number_of_comparisons_eois() {
+        // From the Online Encyclopedia of Integer Sequences: https://oeis.org/A001768
+        let expected = vec![
+            0, 1, 3, 5, 7, 10, 13, 16, 19, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62, 66, 71, 76,
+            81, 86, 91, 96, 101, 106, 111, 116, 121, 126, 131, 136, 141, 146, 151, 156, 161, 166,
+            171, 177, 183, 189, 195, 201, 207, 213, 219, 225, 231, 237, 243, 249, 255,
+        ];
         for (i, n) in expected.into_iter().enumerate() {
             let a = count_cmps((0..i as i32 + 1).collect());
             assert!(
@@ -133,6 +147,6 @@ mod test {
     fn right_number_of_comparisons_big() {
         let mut xs: Vec<i32> = (0..100).collect();
         xs.shuffle(&mut pcg::Pcg::new(3, 7));
-        assert_eq!(count_cmps(xs), 615);
+        assert_eq!(count_cmps(xs), 534);
     }
 }
