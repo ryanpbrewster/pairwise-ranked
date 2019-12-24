@@ -36,19 +36,15 @@ where
 
     // Now recursively sort those larger elements.
     merge_insertion_sort(&mut xs[..half], cmp);
-    println!("done recursing: {:?}", xs);
 
     // The smallest element has a partner that we already know about, move that into place.
     xs.swap(half, partner[&xs[0]]);
     xs[..=half].rotate_right(1);
 
-    println!("handled easy case: {:?}", xs);
-
     // Now do an insertion-sort to get the latter half of the array into order.
     for i in half + 1..xs.len() {
         let x = xs[i];
         let idx = find_insert_point(x, &xs[..i], cmp);
-        println!("xs[{}] = {} belongs at {}", i, x, idx);
         xs[idx..=i].rotate_right(1);
     }
 }
@@ -57,10 +53,17 @@ fn find_insert_point<F>(x: i32, xs: &[i32], cmp: &mut F) -> usize
 where
     F: FnMut(i32, i32) -> Ordering + Sized,
 {
-    match xs.binary_search_by(|&y| cmp(y, x)) {
-        Ok(idx) => idx,
-        Err(idx) => idx,
+    let mut lo = 0;
+    let mut hi = xs.len();
+    while hi > lo {
+        let mid = lo + (hi - lo) / 2;
+        match cmp(x, xs[mid]) {
+            Ordering::Equal => return mid,
+            Ordering::Less => hi = mid,
+            Ordering::Greater => lo = mid + 1,
+        };
     }
+    lo
 }
 
 #[cfg(test)]
@@ -90,7 +93,7 @@ mod test {
 
     #[test]
     fn manual() {
-        let mut xs: Vec<i32> = (0..4).collect();
+        let mut xs: Vec<i32> = vec![2, 1, 0];
         merge_insertion_sort(&mut xs, &mut |a: i32, b: i32| {
             println!("cmp {} vs {}", a, b);
             a.cmp(&b)
@@ -108,7 +111,7 @@ mod test {
 
     #[test]
     fn right_number_of_comparisons_smoke() {
-        assert_eq!(count_cmps(vec![3, 5, 1, 2, 4]), 9); // NB: this can be driven down to 7
+        assert_eq!(count_cmps(vec![3, 5, 1, 2, 4]), 7);
     }
 
     #[test]
@@ -116,9 +119,8 @@ mod test {
         let expected = vec![0, 1, 3, 5, 7, 10, 13, 16, 19, 22, 26, 30, 34];
         for (i, n) in expected.into_iter().enumerate() {
             let a = count_cmps((0..i as i32 + 1).collect());
-            assert_eq!(
-                a,
-                n,
+            assert!(
+                a <= n,
                 "{} items can be sorted in {} cmps but we used {}",
                 i + 1,
                 n,
@@ -131,6 +133,6 @@ mod test {
     fn right_number_of_comparisons_big() {
         let mut xs: Vec<i32> = (0..100).collect();
         xs.shuffle(&mut pcg::Pcg::new(3, 7));
-        assert_eq!(count_cmps(xs), 736);
+        assert_eq!(count_cmps(xs), 615);
     }
 }
