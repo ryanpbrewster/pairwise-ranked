@@ -1,21 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-pub fn selection_sort<F>(xs: &mut [i32], mut cmp: F)
-where
-    F: FnMut(i32, i32) -> Ordering + Sized,
-{
-    for i in 0..xs.len() {
-        let mut t = i;
-        for j in i + 1..xs.len() {
-            if cmp(xs[j], xs[t]) == Ordering::Less {
-                t = j;
-            }
-        }
-        xs.swap(i, t);
-    }
-}
-
 pub fn merge_insertion_sort<F>(xs: &mut [i32], cmp: &mut F)
 where
     F: FnMut(i32, i32) -> Ordering + Sized,
@@ -41,8 +26,7 @@ where
     for i in 0..half {
         // Every step of the way we'll be inserting an extra element,
         // so `x[i]` will be located at `xs[2*i]`.
-        let x = xs[2 * i];
-        let y = partner[&x];
+        let y = partner[&xs[2 * i]];
         // We known that y[i] < x[i], so we need to insert it to the left of x[i].
         let idx = find_insert_point(y, &xs[..2 * i], cmp);
         // Make room.
@@ -52,8 +36,7 @@ where
     }
     if xs.len() % 2 > 0 {
         let i = xs.len() - 1;
-        let x = xs[i];
-        let idx = find_insert_point(x, &xs[..i], cmp);
+        let idx = find_insert_point(xs[i], &xs[..i], cmp);
         xs[idx..].rotate_right(1);
     }
 }
