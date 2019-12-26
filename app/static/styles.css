@@ -1,0 +1,90 @@
+html,
+body {
+    margin: auto;
+    padding: 20px;
+
+    background-color: white;
+    font: 14px 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+#main {
+    display: grid;
+    grid-template-rows: 128px 96px auto;
+    justify-items: center;
+}
+
+#input {
+    grid-row: 1;
+}
+
+#menu {
+    grid-row: 2;
+}
+
+#program {
+    grid-row: 3;
+    display: inline-grid;
+    grid-template-rows: 96px auto;
+}
+
+#operations {
+    grid-row: 1;
+}
+
+#pointer {
+    width: 0;
+    height: 0;
+    border-left: 16px solid transparent;
+    border-right: 16px solid transparent;
+    border-top: 32px solid red;
+    position: absolute;
+    transform: translate(-16px, -32px);
+}
+
+.stack-operation {
+    text-align: center;
+    font-family: monospace;
+    position: absolute;
+    border-style: solid;
+    border-color: black;
+    width: 62px;
+    height: 62px;
+    line-height: 62px;
+    border-width: 2px;
+}
+
+.tooltip {
+  display: inline-block;
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 500%;
+  background-color: black;
+  color: #fff;
+  padding: 5px 0;
+  border-radius: 6px;
+
+  /* Position the tooltip text - see examples below! */
+  position: absolute;
+  z-index: 1;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+
+#stack {
+    grid-row: 2;
+    font-family: monospace;
+}
+
+.stack-value-ok {
+    color: green;
+}
+
+.stack-value-err {
+    color: red;
+}

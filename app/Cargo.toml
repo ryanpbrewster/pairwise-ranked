@@ -1,0 +1,12 @@
+[package]
+name = "app"
+version = "0.1.0"
+authors = ["Ryan Brewster <ryanpbrewster@google.com>"]
+edition = "2018"
+
+[profile.release]
+opt-level = "z"
+
+[dependencies]
+yew = "0.10"
+isort = { path = "../isort" }
