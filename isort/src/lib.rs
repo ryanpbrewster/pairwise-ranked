@@ -1,26 +1,45 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-pub fn merge_insertion_sort<F>(xs: &mut [i32], cmp: &mut F)
+#[derive(Eq, PartialEq, Copy, Clone, Hash, Debug)]
+pub struct Pair(pub usize, pub usize);
+impl Pair {
+    pub fn first(&self) -> usize {
+        self.0
+    }
+    pub fn second(&self) -> usize {
+        self.1
+    }
+
+    pub fn reverse(&self) -> Pair {
+        Pair(self.1, self.0)
+    }
+}
+
+/// If this function returns Ok(_) then the input slice will be sorted.
+/// If it returns Err(p) then the input slice could not be sorted because
+/// the ordering was incomplete, and in particular it was missing an ordering
+/// for `p`.
+pub fn merge_insertion_sort<F>(xs: &mut [usize], cmp: &mut F) -> Result<(), Pair>
 where
-    F: FnMut(i32, i32) -> Ordering + Sized,
+    F: FnMut(usize, usize) -> Result<Ordering, Pair> + Sized,
 {
     if xs.len() < 2 {
-        return;
+        return Ok(());
     }
 
     // First, swap all the largest elements to the front.
     let mut partner = HashMap::new();
     let half = xs.len() / 2;
     for i in 0..half {
-        if cmp(xs[i], xs[i + half]) == Ordering::Less {
+        if cmp(xs[i], xs[i + half])? == Ordering::Less {
             xs.swap(i, i + half);
         }
         partner.insert(xs[i], xs[i + half]);
     }
 
     // Now recursively sort those larger elements.
-    merge_insertion_sort(&mut xs[..half], cmp);
+    merge_insertion_sort(&mut xs[..half], cmp)?;
 
     // Now do an insertion-sort to get the latter half of the array into order.
     for i in 0..half {
@@ -28,7 +47,7 @@ where
         // so `x[i]` will be located at `xs[2*i]`.
         let y = partner[&xs[2 * i]];
         // We known that y[i] < x[i], so we need to insert it to the left of x[i].
-        let idx = find_insert_point(y, &xs[..2 * i], cmp);
+        let idx = find_insert_point(y, &xs[..2 * i], cmp)?;
         // Make room.
         xs[idx..=half + i].rotate_right(1);
         // Insert it.
@@ -36,26 +55,27 @@ where
     }
     if xs.len() % 2 > 0 {
         let i = xs.len() - 1;
-        let idx = find_insert_point(xs[i], &xs[..i], cmp);
+        let idx = find_insert_point(xs[i], &xs[..i], cmp)?;
         xs[idx..].rotate_right(1);
     }
+    Ok(())
 }
 
-fn find_insert_point<F>(x: i32, xs: &[i32], cmp: &mut F) -> usize
+fn find_insert_point<F>(x: usize, xs: &[usize], cmp: &mut F) -> Result<usize, Pair>
 where
-    F: FnMut(i32, i32) -> Ordering + Sized,
+    F: FnMut(usize, usize) -> Result<Ordering, Pair> + Sized,
 {
     let mut lo = 0;
     let mut hi = xs.len();
     while hi > lo {
         let mid = lo + (hi - lo) / 2;
-        match cmp(x, xs[mid]) {
-            Ordering::Equal => return mid,
+        match cmp(x, xs[mid])? {
+            Ordering::Equal => return Ok(mid),
             Ordering::Less => hi = mid,
             Ordering::Greater => lo = mid + 1,
         };
     }
-    lo
+    Ok(lo)
 }
 
 #[cfg(test)]
@@ -67,36 +87,36 @@ mod test {
     #[test]
     fn sorts_correctly_smoke() {
         let mut xs = vec![3, 5, 1, 2, 4];
-        merge_insertion_sort(&mut xs, &mut |a, b| a.cmp(&b));
+        merge_insertion_sort(&mut xs, &mut |a, b| Ok(a.cmp(&b)));
         assert_eq!(xs, vec![1, 2, 3, 4, 5]);
     }
 
     #[test]
     fn sorts_correctly() {
-        let init: Vec<i32> = (0..100).collect();
+        let init: Vec<usize> = (0..100).collect();
         let mut prng = Pcg::new(1, 2);
         for _ in 0..1000 {
             let mut xs = init.clone();
             xs.shuffle(&mut prng);
-            merge_insertion_sort(&mut xs, &mut |a, b| a.cmp(&b));
+            merge_insertion_sort(&mut xs, &mut |a, b| Ok(a.cmp(&b)));
             assert_eq!(xs, init);
         }
     }
 
     #[test]
     fn manual() {
-        let mut xs: Vec<i32> = (0..8).collect();
-        merge_insertion_sort(&mut xs, &mut |a: i32, b: i32| {
+        let mut xs: Vec<usize> = (0..8).collect();
+        merge_insertion_sort(&mut xs, &mut |a: usize, b: usize| {
             println!("cmp {} vs {}", a, b);
-            a.cmp(&b)
+            Ok(a.cmp(&b))
         });
     }
 
-    fn count_cmps(mut xs: Vec<i32>) -> usize {
+    fn count_cmps(mut xs: Vec<usize>) -> usize {
         let mut cnt = 0;
-        merge_insertion_sort(&mut xs, &mut |a: i32, b: i32| {
+        merge_insertion_sort(&mut xs, &mut |a: usize, b: usize| {
             cnt += 1;
-            a.cmp(&b)
+            Ok(a.cmp(&b))
         });
         cnt
     }
@@ -115,7 +135,7 @@ mod test {
             171, 177, 183, 189, 195, 201, 207, 213, 219, 225, 231, 237, 243, 249, 255,
         ];
         for (i, n) in expected.into_iter().enumerate() {
-            let a = count_cmps((0..i as i32 + 1).collect());
+            let a = count_cmps((0..i + 1).collect());
             assert!(
                 a <= n,
                 "{} items can be sorted in {} cmps but we used {}",
@@ -128,7 +148,7 @@ mod test {
 
     #[test]
     fn right_number_of_comparisons_big() {
-        let mut xs: Vec<i32> = (0..100).collect();
+        let mut xs: Vec<usize> = (0..100).collect();
         xs.shuffle(&mut pcg::Pcg::new(3, 7));
         assert_eq!(count_cmps(xs), 534);
     }
