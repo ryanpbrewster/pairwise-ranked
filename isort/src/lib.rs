@@ -1,11 +1,9 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::hash::Hash;
 
-pub fn merge_insertion_sort<T, F>(xs: &mut [T], cmp: &mut F)
+pub fn merge_insertion_sort<F>(xs: &mut [i32], cmp: &mut F)
 where
-    T: Eq + Hash + Clone,
-    F: FnMut(&T, &T) -> Ordering + Sized,
+    F: FnMut(i32, i32) -> Ordering + Sized,
 {
     if xs.len() < 2 {
         return;
@@ -15,10 +13,10 @@ where
     let mut partner = HashMap::new();
     let half = xs.len() / 2;
     for i in 0..half {
-        if cmp(&xs[i], &xs[i + half]) == Ordering::Less {
+        if cmp(xs[i], xs[i + half]) == Ordering::Less {
             xs.swap(i, i + half);
         }
-        partner.insert(xs[i].clone(), xs[i + half].clone());
+        partner.insert(xs[i], xs[i + half]);
     }
 
     // Now recursively sort those larger elements.
@@ -28,9 +26,9 @@ where
     for i in 0..half {
         // Every step of the way we'll be inserting an extra element,
         // so `x[i]` will be located at `xs[2*i]`.
-        let y = partner.remove(&xs[2 * i]).unwrap();
+        let y = partner[&xs[2 * i]];
         // We known that y[i] < x[i], so we need to insert it to the left of x[i].
-        let idx = find_insert_point(&y, &xs[..2 * i], cmp);
+        let idx = find_insert_point(y, &xs[..2 * i], cmp);
         // Make room.
         xs[idx..=half + i].rotate_right(1);
         // Insert it.
@@ -38,20 +36,20 @@ where
     }
     if xs.len() % 2 > 0 {
         let i = xs.len() - 1;
-        let idx = find_insert_point(&xs[i], &xs[..i], cmp);
+        let idx = find_insert_point(xs[i], &xs[..i], cmp);
         xs[idx..].rotate_right(1);
     }
 }
 
-fn find_insert_point<T, F>(x: &T, xs: &[T], cmp: &mut F) -> usize
+fn find_insert_point<F>(x: i32, xs: &[i32], cmp: &mut F) -> usize
 where
-    F: FnMut(&T, &T) -> Ordering + Sized,
+    F: FnMut(i32, i32) -> Ordering + Sized,
 {
     let mut lo = 0;
     let mut hi = xs.len();
     while hi > lo {
         let mid = lo + (hi - lo) / 2;
-        match cmp(&x, &xs[mid]) {
+        match cmp(x, xs[mid]) {
             Ordering::Equal => return mid,
             Ordering::Less => hi = mid,
             Ordering::Greater => lo = mid + 1,
@@ -88,17 +86,17 @@ mod test {
     #[test]
     fn manual() {
         let mut xs: Vec<i32> = (0..8).collect();
-        merge_insertion_sort(&mut xs, &mut |a: &i32, b: &i32| {
+        merge_insertion_sort(&mut xs, &mut |a: i32, b: i32| {
             println!("cmp {} vs {}", a, b);
-            a.cmp(b)
+            a.cmp(&b)
         });
     }
 
     fn count_cmps(mut xs: Vec<i32>) -> usize {
         let mut cnt = 0;
-        merge_insertion_sort(&mut xs, &mut |a: &i32, b: &i32| {
+        merge_insertion_sort(&mut xs, &mut |a: i32, b: i32| {
             cnt += 1;
-            a.cmp(b)
+            a.cmp(&b)
         });
         cnt
     }
