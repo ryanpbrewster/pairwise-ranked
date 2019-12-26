@@ -55,7 +55,7 @@ impl Component for Model {
 
     fn view(&self) -> Html<Self> {
         let mut ordered: Vec<i32> = (0 .. self.items.len() as i32).collect();
-        let mut cmp_fn = |a: i32, b: i32| {
+        let mut cmp_fn = |a: &i32, b: &i32| {
             a.cmp(&b)
         };
         isort::merge_insertion_sort(ordered.as_mut_slice(), &mut cmp_fn);
