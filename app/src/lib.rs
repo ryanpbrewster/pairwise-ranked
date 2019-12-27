@@ -22,13 +22,6 @@ pub struct Model {
 #[derive(Eq, PartialEq, Copy, Clone, Hash, Debug)]
 pub struct Pair(pub usize, pub usize);
 impl Pair {
-    pub fn first(&self) -> usize {
-        self.0
-    }
-    pub fn second(&self) -> usize {
-        self.1
-    }
-
     pub fn reverse(&self) -> Pair {
         Pair(self.1, self.0)
     }
@@ -144,20 +137,19 @@ impl Component for Model {
 }
 
 fn view_info(items: &[String], info: Option<Pair>, keyboard: KeyboardState) -> Html<Model> {
-    match info {
-        None => html! { "done" },
-        Some(p) => {
-            let left = items[p.first()].clone();
-            let right = items[p.second()].clone();
-            html! {
-            <div id="info">
-                <button class=if keyboard.left == KeyState::Pressed { "pressed" } else { "idle "}
-                        onclick=|_| Msg::Rank(p, Ordering::Greater)>  {left} </button>
-                <button class=if keyboard.right == KeyState::Pressed { "pressed" } else { "idle "}
-                        onclick=|_| Msg::Rank(p, Ordering::Less)>     {right} </button>
-            </div>
-            }
-        }
+    let p = match info {
+        None => return html! { "done" },
+        Some(p) => p,
+    };
+    let left = items[p.0].clone();
+    let right = items[p.1].clone();
+    html! {
+    <div id="info">
+        <button class=if keyboard.left == KeyState::Pressed { "pressed" } else { "idle "}
+                onclick=|_| Msg::Rank(p, Ordering::Greater)>  {left} </button>
+        <button class=if keyboard.right == KeyState::Pressed { "pressed" } else { "idle "}
+                onclick=|_| Msg::Rank(p, Ordering::Less)>     {right} </button>
+    </div>
     }
 }
 
