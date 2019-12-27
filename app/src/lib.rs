@@ -3,10 +3,12 @@
 
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use stdweb::js;
 use yew::services::ConsoleService;
-use yew::{html, Component, ComponentLink, Html, ShouldRender};
+use yew::{html, Component, ComponentLink, Html, ShouldRender, KeyDownEvent, IKeyboardEvent};
 
 pub struct Model {
+    link: ComponentLink<Self>,
     console: ConsoleService,
     items: Vec<String>,
     ords: Vec<(Pair, Ordering)>,
@@ -33,21 +35,30 @@ type Permutation = Vec<usize>;
 
 pub enum Msg {
     Rank(Pair, Ordering),
+    KeyDown(KeyDownEvent),
 }
 
 impl Component for Model {
     type Message = Msg;
     type Properties = ();
 
-    fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(_: Self::Properties, mut link: ComponentLink<Self>) -> Self {
         let items: Vec<String> = vec!["red", "blue", "green", "yellow", "white", "rainbow"]
             .into_iter()
             .map(String::from)
             .collect();
         let ords = Vec::new();
         let (ordered, need_to_know) = compute_ordering(&items, &ords);
+
+        let send = link.send_back(|evt| Msg::KeyDown(evt));
+        let cb = move |evt: KeyDownEvent| send.emit(evt);
+        js! {
+            const cb = @{cb};
+            window.addEventListener("keydown", evt => cb(evt));
+        };
         Model {
             console: ConsoleService::new(),
+            link,
             items,
             ords,
             ordered,
@@ -62,6 +73,9 @@ impl Component for Model {
                 let (ordered, need_to_know) = compute_ordering(&self.items, &self.ords);
                 self.ordered = ordered;
                 self.need_to_know = need_to_know;
+            }
+            Msg::KeyDown(evt) => {
+                self.console.log(&format!("key down: {:?}", evt.key()));
             }
         }
         true
