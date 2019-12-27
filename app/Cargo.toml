@@ -8,6 +8,7 @@ edition = "2018"
 opt-level = "z"
 
 [dependencies]
+failure = "*"
 stdweb = "0.4"
 yew = "0.10"
 isort = { path = "../isort" }

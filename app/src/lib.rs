@@ -4,7 +4,10 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use stdweb::js;
-use yew::services::ConsoleService;
+use yew::format::{Json, Nothing};
+use yew::services::fetch;
+use yew::services::fetch::{FetchTask, Response};
+use yew::services::{ConsoleService, FetchService};
 use yew::{
     html, Component, ComponentLink, Html, IKeyboardEvent, KeyDownEvent, KeyUpEvent, ShouldRender,
 };
@@ -12,11 +15,13 @@ use yew::{
 pub struct Model {
     link: ComponentLink<Self>,
     console: ConsoleService,
+    fetch: FetchService,
     items: Vec<String>,
     ords: Vec<(Pair, Ordering)>,
     need_to_know: Option<Pair>,
     ordered: Permutation,
     keyboard_state: KeyboardState,
+    fetch_task: Option<FetchTask>,
 }
 
 #[derive(Eq, PartialEq, Copy, Clone, Hash, Debug)]
@@ -47,6 +52,9 @@ impl Default for KeyState {
 }
 
 pub enum Msg {
+    FetchList(String),
+    NewList(Vec<String>),
+    Debug(String),
     Rank(Pair, Ordering),
     KeyDown(KeyDownEvent),
     KeyUp(KeyUpEvent),
@@ -79,8 +87,10 @@ impl Component for Model {
             window.addEventListener("keyup", evt => keyup(evt));
         };
         Model {
-            console: ConsoleService::new(),
             link,
+            console: ConsoleService::new(),
+            fetch: FetchService::new(),
+            fetch_task: None,
             items,
             ords,
             ordered,
@@ -91,16 +101,49 @@ impl Component for Model {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
+            Msg::Debug(msg) => self.console.log(&msg),
+            Msg::FetchList(name) => {
+                self.console.log(&format!("fetching new list: {}", name));
+                let req = fetch::Request::get(format!(
+                    "https://pairwise-ranked.firebaseio.com/lists/{}.json",
+                    name
+                ))
+                .body(Nothing)
+                .unwrap();
+                let task = self.fetch.fetch(
+                    req,
+                    self.link.send_back(
+                        |resp: Response<Json<Result<Vec<String>, failure::Error>>>| {
+                            let (meta, Json(body)) = resp.into_parts();
+                            if !meta.status.is_success() {
+                                return Msg::Debug(format!("{:?}", meta));
+                            }
+                            match body {
+                                Ok(items) => Msg::NewList(items),
+                                Err(err) => Msg::Debug(format!("{:?}", err)),
+                            }
+                        },
+                    ),
+                );
+                self.fetch_task = Some(task);
+            }
+            Msg::NewList(items) => {
+                self.console.log("starting new list");
+                self.items = items;
+                self.mutate_ords(|ords| ords.clear());
+            }
             Msg::Rank(pair, cmp) => {
-                self.ords.push((pair, cmp));
-                let (ordered, need_to_know) = compute_ordering(&self.items, &self.ords);
-                self.ordered = ordered;
-                self.need_to_know = need_to_know;
+                self.mutate_ords(|ords| ords.push((pair, cmp)));
             }
             Msg::KeyDown(evt) => {
                 match evt.key().as_ref() {
                     "ArrowLeft" => self.keyboard_state.left = KeyState::Pressed,
                     "ArrowRight" => self.keyboard_state.right = KeyState::Pressed,
+                    "z" if evt.ctrl_key() => {
+                        self.mutate_ords(|ords| {
+                            ords.pop();
+                        });
+                    }
                     _ => {}
                 };
             }
@@ -136,6 +179,20 @@ impl Component for Model {
     }
 }
 
+impl Model {
+    /// Convenience wrapper that allows mutation of `self.ords` and automatically
+    /// recomputes the ordering afterwards.
+    fn mutate_ords<F>(&mut self, f: F)
+    where
+        F: FnOnce(&mut Vec<(Pair, Ordering)>),
+    {
+        f(&mut self.ords);
+        let (ordered, need_to_know) = compute_ordering(&self.items, &self.ords);
+        self.ordered = ordered;
+        self.need_to_know = need_to_know;
+    }
+}
+
 fn view_info(items: &[String], info: Option<Pair>, keyboard: KeyboardState) -> Html<Model> {
     let p = match info {
         None => return html! { "done" },
@@ -145,9 +202,11 @@ fn view_info(items: &[String], info: Option<Pair>, keyboard: KeyboardState) -> H
     let right = items[p.1].clone();
     html! {
     <div id="info">
-        <button class=if keyboard.left == KeyState::Pressed { "pressed" } else { "idle "}
+        <button id="left"
+                class=if keyboard.left == KeyState::Pressed { "pressed" } else { "idle "}
                 onclick=|_| Msg::Rank(p, Ordering::Greater)>  {left} </button>
-        <button class=if keyboard.right == KeyState::Pressed { "pressed" } else { "idle "}
+        <button id="right"
+                class=if keyboard.right == KeyState::Pressed { "pressed" } else { "idle "}
                 onclick=|_| Msg::Rank(p, Ordering::Less)>     {right} </button>
     </div>
     }
