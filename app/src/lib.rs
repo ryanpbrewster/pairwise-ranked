@@ -5,7 +5,9 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use stdweb::js;
 use yew::services::ConsoleService;
-use yew::{html, Component, ComponentLink, Html, ShouldRender, KeyDownEvent, IKeyboardEvent};
+use yew::{
+    html, Component, ComponentLink, Html, IKeyboardEvent, KeyDownEvent, KeyUpEvent, ShouldRender,
+};
 
 pub struct Model {
     link: ComponentLink<Self>,
@@ -14,6 +16,7 @@ pub struct Model {
     ords: Vec<(Pair, Ordering)>,
     need_to_know: Option<Pair>,
     ordered: Permutation,
+    keyboard_state: KeyboardState,
 }
 
 #[derive(Eq, PartialEq, Copy, Clone, Hash, Debug)]
@@ -33,9 +36,27 @@ impl Pair {
 
 type Permutation = Vec<usize>;
 
+#[derive(Clone, Copy, Eq, PartialEq, Default)]
+pub struct KeyboardState {
+    left: KeyState,
+    right: KeyState,
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum KeyState {
+    Idle,
+    Pressed,
+}
+impl Default for KeyState {
+    fn default() -> Self {
+        KeyState::Idle
+    }
+}
+
 pub enum Msg {
     Rank(Pair, Ordering),
     KeyDown(KeyDownEvent),
+    KeyUp(KeyUpEvent),
 }
 
 impl Component for Model {
@@ -50,11 +71,19 @@ impl Component for Model {
         let ords = Vec::new();
         let (ordered, need_to_know) = compute_ordering(&items, &ords);
 
-        let send = link.send_back(|evt| Msg::KeyDown(evt));
-        let cb = move |evt: KeyDownEvent| send.emit(evt);
+        let keydown = {
+            let cb = link.send_back(|evt| Msg::KeyDown(evt));
+            move |evt| cb.emit(evt)
+        };
+        let keyup = {
+            let cb = link.send_back(|evt| Msg::KeyUp(evt));
+            move |evt| cb.emit(evt)
+        };
         js! {
-            const cb = @{cb};
-            window.addEventListener("keydown", evt => cb(evt));
+            const keydown = @{keydown};
+            const keyup = @{keyup};
+            window.addEventListener("keydown", evt => keydown(evt));
+            window.addEventListener("keyup", evt => keyup(evt));
         };
         Model {
             console: ConsoleService::new(),
@@ -63,6 +92,7 @@ impl Component for Model {
             ords,
             ordered,
             need_to_know,
+            keyboard_state: KeyboardState::default(),
         }
     }
 
@@ -75,7 +105,28 @@ impl Component for Model {
                 self.need_to_know = need_to_know;
             }
             Msg::KeyDown(evt) => {
-                self.console.log(&format!("key down: {:?}", evt.key()));
+                match evt.key().as_ref() {
+                    "ArrowLeft" => self.keyboard_state.left = KeyState::Pressed,
+                    "ArrowRight" => self.keyboard_state.right = KeyState::Pressed,
+                    _ => {}
+                };
+            }
+            Msg::KeyUp(evt) => {
+                match evt.key().as_ref() {
+                    "ArrowLeft" => {
+                        self.keyboard_state.left = KeyState::Idle;
+                        if let Some(pair) = self.need_to_know {
+                            self.link.send_self(Msg::Rank(pair, Ordering::Greater));
+                        }
+                    }
+                    "ArrowRight" => {
+                        self.keyboard_state.right = KeyState::Idle;
+                        if let Some(pair) = self.need_to_know {
+                            self.link.send_self(Msg::Rank(pair, Ordering::Less));
+                        }
+                    }
+                    _ => {}
+                };
             }
         }
         true
@@ -84,23 +135,26 @@ impl Component for Model {
     fn view(&self) -> Html<Self> {
         html! {
             <div id="main">
-            { view_info(&self.items, self.need_to_know) }
+            { view_info(&self.items, self.need_to_know, self.keyboard_state) }
             { view_items(&self.items, &self.ordered) }
+            { format!("{} choices in", self.ords.len()) }
             </div>
         }
     }
 }
 
-fn view_info(items: &[String], info: Option<Pair>) -> Html<Model> {
+fn view_info(items: &[String], info: Option<Pair>, keyboard: KeyboardState) -> Html<Model> {
     match info {
         None => html! { "done" },
         Some(p) => {
-            let a = items[p.first()].clone();
-            let b = items[p.second()].clone();
+            let left = items[p.first()].clone();
+            let right = items[p.second()].clone();
             html! {
             <div id="info">
-                <button onclick=|_| Msg::Rank(p, Ordering::Greater)>  {a} </button>
-                <button onclick=|_| Msg::Rank(p, Ordering::Less)>     {b} </button>
+                <button class=if keyboard.left == KeyState::Pressed { "pressed" } else { "idle "}
+                        onclick=|_| Msg::Rank(p, Ordering::Greater)>  {left} </button>
+                <button class=if keyboard.right == KeyState::Pressed { "pressed" } else { "idle "}
+                        onclick=|_| Msg::Rank(p, Ordering::Less)>     {right} </button>
             </div>
             }
         }
