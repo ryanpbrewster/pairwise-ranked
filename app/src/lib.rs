@@ -172,8 +172,8 @@ impl Component for Model {
         html! {
             <div id="main">
             { view_info(&self.items, self.need_to_know, self.keyboard_state) }
-            { view_items(&self.items, &self.ordered) }
             { format!("{} choices in", self.ords.len()) }
+            { view_items(&self.items, &self.ordered) }
             </div>
         }
     }
