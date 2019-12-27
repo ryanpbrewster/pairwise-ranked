@@ -1,11 +1,10 @@
 #![recursion_limit = "128"]
 #![allow(dead_code)]
 
+use std::cmp::Ordering;
+use std::collections::HashMap;
 use yew::services::ConsoleService;
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
-use std::collections::HashMap;
-use std::cmp::Ordering;
-use isort::Pair;
 
 pub struct Model {
     console: ConsoleService,
@@ -13,6 +12,21 @@ pub struct Model {
     ords: Vec<(Pair, Ordering)>,
     need_to_know: Option<Pair>,
     ordered: Permutation,
+}
+
+#[derive(Eq, PartialEq, Copy, Clone, Hash, Debug)]
+pub struct Pair(pub usize, pub usize);
+impl Pair {
+    pub fn first(&self) -> usize {
+        self.0
+    }
+    pub fn second(&self) -> usize {
+        self.1
+    }
+
+    pub fn reverse(&self) -> Pair {
+        Pair(self.1, self.0)
+    }
 }
 
 type Permutation = Vec<usize>;
@@ -44,7 +58,6 @@ impl Component for Model {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::Rank(pair, cmp) => {
-                self.console.log(&format!("{} {:?} {}", self.items[pair.first()], cmp, self.items[pair.second()]));
                 self.ords.push((pair, cmp));
                 let (ordered, need_to_know) = compute_ordering(&self.items, &self.ords);
                 self.ordered = ordered;
@@ -76,7 +89,7 @@ fn view_info(items: &[String], info: Option<Pair>) -> Html<Model> {
                 <button onclick=|_| Msg::Rank(p, Ordering::Less)>     {b} </button>
             </div>
             }
-        },
+        }
     }
 }
 
@@ -102,10 +115,19 @@ fn compute_ordering(items: &[String], ords: &[(Pair, Ordering)]) -> (Permutation
         cmps.insert(pair, ord);
         cmps.insert(pair.reverse(), ord.reverse());
     }
-    let mut xs: Vec<usize> = (0 .. items.len()).collect();
-    let need_to_know = isort::merge_insertion_sort(&mut xs, &mut |a: usize, b: usize| {
+    let mut xs: Vec<usize> = (0..items.len()).collect();
+    let mut need_to_know = None;
+    isort::merge_insertion_sort(&mut xs, &mut |a: usize, b: usize| {
         let p = Pair(a, b);
-        cmps.get(&p).cloned().ok_or(p)
-    }).err();
+        match cmps.get(&p) {
+            Some(&ord) => ord,
+            None => {
+                if need_to_know.is_none() {
+                    need_to_know = Some(p);
+                }
+                Ordering::Equal
+            }
+        }
+    });
     (xs, need_to_know)
 }
