@@ -133,7 +133,7 @@ impl Component for Model {
                 let task = self.fetch.fetch(
                     req,
                     self.link.send_back(
-                        |resp: Response<Json<Result<Vec<String>, failure::Error>>>| {
+                        |resp: Response<Json<Result<Vec<String>, _>>>| {
                             let (meta, Json(body)) = resp.into_parts();
                             if !meta.status.is_success() {
                                 return Msg::Debug(format!("{:?}", meta));
