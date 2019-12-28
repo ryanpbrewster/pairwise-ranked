@@ -1,5 +1,5 @@
 {
   "projects": {
-    "default": "cel-vm"
+    "default": "pairwise-ranked"
   }
 }
