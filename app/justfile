@@ -1,0 +1,5 @@
+build:
+  wasm-pack build --release --target=web
+
+serve: build
+  cd static && ./serve.py
