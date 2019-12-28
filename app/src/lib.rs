@@ -18,8 +18,7 @@ pub struct Model {
     fetch: FetchService,
     items: Vec<String>,
     ords: Vec<(Pair, Ordering)>,
-    need_to_know: Option<Pair>,
-    ordered: Permutation,
+    sort_state: SortState,
     keyboard_state: KeyboardState,
     fetch_task: Option<FetchTask>,
 }
@@ -30,6 +29,12 @@ impl Pair {
     pub fn reverse(&self) -> Pair {
         Pair(self.1, self.0)
     }
+}
+
+pub struct SortState {
+    num_missing_ords: usize,
+    next_missing_ord: Option<Pair>,
+    current_order: Permutation,
 }
 
 type Permutation = Vec<usize>;
@@ -65,12 +70,9 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, mut link: ComponentLink<Self>) -> Self {
-        let items: Vec<String> = vec!["red", "blue", "green", "yellow", "white", "rainbow"]
-            .into_iter()
-            .map(String::from)
-            .collect();
+        let items: Vec<String> = vec!["loading..."].into_iter().map(String::from).collect();
         let ords = Vec::new();
-        let (ordered, need_to_know) = compute_ordering(&items, &ords);
+        let sort_state = compute_ordering(&items, &ords);
 
         let keydown = {
             let cb = link.send_back(|evt| Msg::KeyDown(evt));
@@ -93,8 +95,7 @@ impl Component for Model {
             fetch_task: None,
             items,
             ords,
-            ordered,
-            need_to_know,
+            sort_state,
             keyboard_state: KeyboardState::default(),
         }
     }
@@ -151,13 +152,13 @@ impl Component for Model {
                 match evt.key().as_ref() {
                     "ArrowLeft" => {
                         self.keyboard_state.left = KeyState::Idle;
-                        if let Some(pair) = self.need_to_know {
+                        if let Some(pair) = self.sort_state.next_missing_ord {
                             self.link.send_self(Msg::Rank(pair, Ordering::Greater));
                         }
                     }
                     "ArrowRight" => {
                         self.keyboard_state.right = KeyState::Idle;
-                        if let Some(pair) = self.need_to_know {
+                        if let Some(pair) = self.sort_state.next_missing_ord {
                             self.link.send_self(Msg::Rank(pair, Ordering::Less));
                         }
                     }
@@ -171,9 +172,9 @@ impl Component for Model {
     fn view(&self) -> Html<Self> {
         html! {
             <div id="main">
-            { view_info(&self.items, self.need_to_know, self.keyboard_state) }
-            { format!("{} choices in", self.ords.len()) }
-            { view_items(&self.items, &self.ordered) }
+            { view_info(&self.items, &self.sort_state, self.keyboard_state) }
+            { format!("{} in, {} to go", self.ords.len(), self.sort_state.num_missing_ords) }
+            { view_items(&self.items, &self.sort_state.current_order) }
             </div>
         }
     }
@@ -187,15 +188,13 @@ impl Model {
         F: FnOnce(&mut Vec<(Pair, Ordering)>),
     {
         f(&mut self.ords);
-        let (ordered, need_to_know) = compute_ordering(&self.items, &self.ords);
-        self.ordered = ordered;
-        self.need_to_know = need_to_know;
+        self.sort_state = compute_ordering(&self.items, &self.ords);
     }
 }
 
-fn view_info(items: &[String], info: Option<Pair>, keyboard: KeyboardState) -> Html<Model> {
-    let p = match info {
-        None => return html! { "done" },
+fn view_info(items: &[String], info: &SortState, keyboard: KeyboardState) -> Html<Model> {
+    let p = match info.next_missing_ord {
+        None => return html! {},
         Some(p) => p,
     };
     let left = items[p.0].clone();
@@ -228,25 +227,31 @@ fn view_item(item: &str) -> Html<Model> {
     }
 }
 
-fn compute_ordering(items: &[String], ords: &[(Pair, Ordering)]) -> (Permutation, Option<Pair>) {
+fn compute_ordering(items: &[String], ords: &[(Pair, Ordering)]) -> SortState {
     let mut cmps: HashMap<Pair, Ordering> = HashMap::new();
     for &(pair, ord) in ords {
         cmps.insert(pair, ord);
         cmps.insert(pair.reverse(), ord.reverse());
     }
     let mut xs: Vec<usize> = (0..items.len()).collect();
-    let mut need_to_know = None;
+    let mut num_missing_ords = 0;
+    let mut next_missing_ord = None;
     isort::merge_insertion_sort(&mut xs, &mut |a: usize, b: usize| {
         let p = Pair(a, b);
         match cmps.get(&p) {
             Some(&ord) => ord,
             None => {
-                if need_to_know.is_none() {
-                    need_to_know = Some(p);
+                num_missing_ords += 1;
+                if next_missing_ord.is_none() {
+                    next_missing_ord = Some(p);
                 }
-                Ordering::Equal
+                Ordering::Less
             }
         }
     });
-    (xs, need_to_know)
+    SortState {
+        num_missing_ords,
+        next_missing_ord,
+        current_order: xs,
+    }
 }
