@@ -160,7 +160,7 @@ impl Component for Model {
                 match evt.key().as_ref() {
                     "ArrowLeft" => self.keyboard_state.left = KeyState::Pressed,
                     "ArrowRight" => self.keyboard_state.right = KeyState::Pressed,
-                    "ArrowDown" => self.keyboard_state.down = KeyState::Pressed,
+                    "ArrowUp" => self.keyboard_state.down = KeyState::Pressed,
                     "z" if evt.ctrl_key() => {
                         self.mutate_ords(|ords| {
                             ords.pop();
@@ -183,7 +183,7 @@ impl Component for Model {
                             self.link.send_self(Msg::Rank(pair, Ordering::Less));
                         }
                     }
-                    "ArrowDown" => {
+                    "ArrowUp" => {
                         self.keyboard_state.down = KeyState::Idle;
                         if let Some(pair) = self.sort_state.next_missing_ord {
                             self.link.send_self(Msg::Rank(pair, Ordering::Equal));
