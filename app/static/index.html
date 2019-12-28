@@ -1,13 +1,14 @@
 <!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <title>Expression Stack Machine</title>
-        <link rel="stylesheet" href="styles.css">
-        <link rel="shortcut icon" href="favicon.ico">
-    </head>
-    <body>
-        <script src="app.js"></script>
-    </body>
-</html>
+<head>
+<meta charset="utf-8">
+<title>Pairwise Ranking</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="shortcut icon" href="favicon.ico">
+<script type="module">
+import init, { run_app } from './pkg/app.js';
 
+init().then(() => {
+  run_app();
+});
+</script>
+</head>

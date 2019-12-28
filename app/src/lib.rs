@@ -11,6 +11,25 @@ use yew::services::{ConsoleService, FetchService};
 use yew::{
     html, Component, ComponentLink, Html, IKeyboardEvent, KeyDownEvent, KeyUpEvent, ShouldRender,
 };
+use wasm_bindgen::prelude::*;
+
+// This is the entry point for the web app
+#[wasm_bindgen]
+pub fn run_app() -> Result<(), JsValue> {
+    yew::initialize();
+    let mut name = stdweb::web::window().location().unwrap().hash().unwrap();
+    if name.starts_with('#') {
+        name.remove(0);
+    }
+    if name.is_empty() {
+        name = "colors".to_owned();
+    }
+    yew::App::<Model>::new()
+        .mount_to_body()
+        .send_message(Msg::FetchList(name));
+    yew::run_loop();
+    Ok(())
+}
 
 pub struct Model {
     link: ComponentLink<Self>,
