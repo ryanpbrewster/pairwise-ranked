@@ -4,6 +4,7 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use stdweb::js;
+use wasm_bindgen::prelude::*;
 use yew::format::{Json, Nothing};
 use yew::services::fetch;
 use yew::services::fetch::{FetchTask, Response};
@@ -11,18 +12,23 @@ use yew::services::{ConsoleService, FetchService};
 use yew::{
     html, Component, ComponentLink, Html, IKeyboardEvent, KeyDownEvent, KeyUpEvent, ShouldRender,
 };
-use wasm_bindgen::prelude::*;
+
+const DEFAULT_LIST: &'static str = "colors";
 
 // This is the entry point for the web app
 #[wasm_bindgen]
 pub fn run_app() -> Result<(), JsValue> {
     yew::initialize();
-    let mut name = stdweb::web::window().location().unwrap().pathname().unwrap();
+    let mut name = stdweb::web::window()
+        .location()
+        .unwrap()
+        .pathname()
+        .unwrap();
     if name.starts_with('/') {
         name.remove(0);
     }
     if name.is_empty() {
-        name = "colors".to_owned();
+        name = DEFAULT_LIST.to_owned();
     }
     yew::App::<Model>::new()
         .mount_to_body()
@@ -35,6 +41,7 @@ pub struct Model {
     link: ComponentLink<Self>,
     console: ConsoleService,
     fetch: FetchService,
+    list_input_value: String,
     items: Vec<String>,
     ords: Vec<(Pair, Ordering)>,
     sort_state: SortState,
@@ -77,9 +84,12 @@ impl Default for KeyState {
 }
 
 pub enum Msg {
+    Debug(String),
+    ListInputValueChanged(String),
+    ListInputKeyDown(KeyDownEvent),
     FetchList(String),
     NewList(Vec<String>),
-    Debug(String),
+    NoSuchList(String),
     Rank(Pair, Ordering),
     KeyDown(KeyDownEvent),
     KeyUp(KeyUpEvent),
@@ -113,6 +123,7 @@ impl Component for Model {
             console: ConsoleService::new(),
             fetch: FetchService::new(),
             fetch_task: None,
+            list_input_value: DEFAULT_LIST.to_owned(),
             items,
             ords,
             sort_state,
@@ -122,7 +133,21 @@ impl Component for Model {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::Debug(msg) => self.console.log(&msg),
+            Msg::Debug(msg) => {
+                self.console.log(&msg);
+            }
+            Msg::NoSuchList(name) => {
+                stdweb::web::alert(&format!("couldn't find the list '{}'", name));
+            }
+            Msg::ListInputValueChanged(v) => {
+                self.list_input_value = v;
+            }
+            Msg::ListInputKeyDown(e) => {
+                if e.key() == "Enter" {
+                    self.link
+                        .send_self(Msg::FetchList(self.list_input_value.clone()));
+                }
+            }
             Msg::FetchList(name) => {
                 self.console.log(&format!("fetching new list: {}", name));
                 let req = fetch::Request::get(format!(
@@ -133,8 +158,8 @@ impl Component for Model {
                 .unwrap();
                 let task = self.fetch.fetch(
                     req,
-                    self.link.send_back(
-                        |resp: Response<Json<Result<Vec<String>, _>>>| {
+                    self.link
+                        .send_back(|resp: Response<Json<Result<Vec<String>, _>>>| {
                             let (meta, Json(body)) = resp.into_parts();
                             if !meta.status.is_success() {
                                 return Msg::Debug(format!("{:?}", meta));
@@ -143,13 +168,12 @@ impl Component for Model {
                                 Ok(items) => Msg::NewList(items),
                                 Err(err) => Msg::Debug(format!("{:?}", err)),
                             }
-                        },
-                    ),
+                        }),
                 );
                 self.fetch_task = Some(task);
             }
             Msg::NewList(items) => {
-                self.console.log("starting new list");
+                self.list_input_value.clear();
                 self.items = items;
                 self.mutate_ords(|ords| ords.clear());
             }
@@ -199,6 +223,11 @@ impl Component for Model {
     fn view(&self) -> Html<Self> {
         html! {
             <div id="main">
+            <input id="list-input"
+                   onkeydown=|e| Msg::ListInputKeyDown(e)
+                   oninput=|e| Msg::ListInputValueChanged(e.value)
+                   placeholder="list name"
+                   value={&self.list_input_value}></input>
             { view_info(&self.items, &self.sort_state, self.keyboard_state) }
             { format!("{} in, {} to go", self.ords.len(), self.sort_state.num_missing_ords) }
             { view_items(&self.items, &self.sort_state.current_order) }
