@@ -67,20 +67,9 @@ type Permutation = Vec<usize>;
 
 #[derive(Clone, Copy, Eq, PartialEq, Default)]
 pub struct KeyboardState {
-    left: KeyState,
-    right: KeyState,
-    down: KeyState,
-}
-
-#[derive(Clone, Copy, Eq, PartialEq)]
-enum KeyState {
-    Idle,
-    Pressed,
-}
-impl Default for KeyState {
-    fn default() -> Self {
-        KeyState::Idle
-    }
+    left: bool,
+    right: bool,
+    up: bool,
 }
 
 pub enum Msg {
@@ -182,9 +171,9 @@ impl Component for Model {
             }
             Msg::KeyDown(evt) => {
                 match evt.key().as_ref() {
-                    "ArrowLeft" => self.keyboard_state.left = KeyState::Pressed,
-                    "ArrowRight" => self.keyboard_state.right = KeyState::Pressed,
-                    "ArrowUp" => self.keyboard_state.down = KeyState::Pressed,
+                    "ArrowLeft" => self.keyboard_state.left = true,
+                    "ArrowRight" => self.keyboard_state.right = true,
+                    "ArrowUp" => self.keyboard_state.up = true,
                     "z" if evt.ctrl_key() => {
                         self.mutate_ords(|ords| {
                             ords.pop();
@@ -196,19 +185,19 @@ impl Component for Model {
             Msg::KeyUp(evt) => {
                 match evt.key().as_ref() {
                     "ArrowLeft" => {
-                        self.keyboard_state.left = KeyState::Idle;
+                        self.keyboard_state.left = false;
                         if let Some(pair) = self.sort_state.next_missing_ord {
                             self.link.send_self(Msg::Rank(pair, Ordering::Greater));
                         }
                     }
                     "ArrowRight" => {
-                        self.keyboard_state.right = KeyState::Idle;
+                        self.keyboard_state.right = false;
                         if let Some(pair) = self.sort_state.next_missing_ord {
                             self.link.send_self(Msg::Rank(pair, Ordering::Less));
                         }
                     }
                     "ArrowUp" => {
-                        self.keyboard_state.down = KeyState::Idle;
+                        self.keyboard_state.up = false;
                         if let Some(pair) = self.sort_state.next_missing_ord {
                             self.link.send_self(Msg::Rank(pair, Ordering::Equal));
                         }
@@ -258,10 +247,10 @@ fn view_info(items: &[String], info: &SortState, keyboard: KeyboardState) -> Htm
     html! {
     <div id="info">
         <button id="left"
-                class=if keyboard.left == KeyState::Pressed { "pressed" } else { "idle "}
+                class=if keyboard.left || keyboard.up { "pressed" } else { "idle "}
                 onclick=|_| Msg::Rank(p, Ordering::Greater)>  {left} </button>
         <button id="right"
-                class=if keyboard.right == KeyState::Pressed { "pressed" } else { "idle "}
+                class=if keyboard.right || keyboard.up { "pressed" } else { "idle "}
                 onclick=|_| Msg::Rank(p, Ordering::Less)>     {right} </button>
     </div>
     }
