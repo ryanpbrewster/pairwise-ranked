@@ -3,3 +3,6 @@ build:
 
 serve: build
   fb serve
+
+deploy: build
+  fb deploy --only hosting
