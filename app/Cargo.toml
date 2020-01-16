@@ -15,4 +15,4 @@ lto = true
 stdweb = "0.4"
 wasm-bindgen = "0.2"
 yew = "0.10"
-isort = { path = "../isort" }
+ford-johnson = "0.2"

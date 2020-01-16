@@ -281,7 +281,7 @@ fn compute_ordering(items: &[String], ords: &[(Pair, Ordering)]) -> SortState {
     let mut xs: Vec<usize> = (0..items.len()).collect();
     let mut num_missing_ords = 0;
     let mut next_missing_ord = None;
-    isort::merge_insertion_sort(&mut xs, &mut |a: usize, b: usize| {
+    ford_johnson::sort(&mut xs, &mut |a: usize, b: usize| {
         let p = Pair(a, b);
         match cmps.get(&p) {
             Some(&ord) => ord,
