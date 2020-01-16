@@ -1,3 +1,4 @@
 /target/
 /.idea/
 /.firebase/
+/node_modules/
