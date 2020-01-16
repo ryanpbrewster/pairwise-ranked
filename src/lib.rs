@@ -22,9 +22,9 @@ pub fn run_app() -> Result<(), JsValue> {
     let mut name = stdweb::web::window()
         .location()
         .unwrap()
-        .pathname()
+        .hash()
         .unwrap();
-    if name.starts_with('/') {
+    if name.starts_with('#') {
         name.remove(0);
     }
     if name.is_empty() {

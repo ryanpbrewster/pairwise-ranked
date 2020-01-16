@@ -1,5 +1,7 @@
 build:
   wasm-pack build --release --target=web
+  rm -rf static/pkg/
+  mv pkg static/
 
 serve: build
   npx firebase serve
